@@ -1,7 +1,11 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS  # Import CORS
 from vector_store import VectorStore
 
 app = Flask(__name__)
+CORS(app, origins="*", methods=["GET", "POST", "PUT", "DELETE"], allow_headers=["Content-Type"])
+
+
 store = VectorStore()
 store.load_pdfs("pdfs")  # Load all PDFs at startup
 
@@ -12,7 +16,6 @@ def chat():
 
     results = store.search(user_query, cdp_filter=cdp_filter)
     
-
     formatted_results = [
         {
             "cdp": res["cdp"],
