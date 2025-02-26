@@ -11,7 +11,18 @@ def chat():
     cdp_filter = request.json.get("cdp")  # Optional CDP filter
 
     results = store.search(user_query, cdp_filter=cdp_filter)
-    return jsonify({"response": results})
+    
+
+    formatted_results = [
+        {
+            "cdp": res["cdp"],
+            "text": res["text"],
+            "source": res.get("source", "Unknown")  # Ensure source exists
+        }
+        for res in results
+    ]
+
+    return jsonify({"response": formatted_results})
 
 if __name__ == "__main__":
     app.run(debug=True)

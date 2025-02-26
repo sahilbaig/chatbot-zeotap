@@ -9,7 +9,7 @@ class VectorStore:
         self.model = SentenceTransformer(model_name)
         self.index = None
         self.texts = []
-        self.metadata = []  # Store metadata (CDP name)
+        self.metadata = []  # Stores (CDP name, source file)
 
     def add_texts(self, texts):
         """Embeds and adds text chunks to FAISS."""
@@ -18,7 +18,7 @@ class VectorStore:
             self.index = faiss.IndexFlatL2(embeddings.shape[1])
         self.index.add(embeddings)
         self.texts.extend(texts)
-        self.metadata.extend([t["cdp"] for t in texts])  # Store CDP source
+        self.metadata.extend([(t["cdp"], t["source"]) for t in texts])  # Store CDP & source file
 
     def load_pdfs(self, pdfs_root):
         """Extract and store PDF text by CDP type."""
@@ -33,13 +33,19 @@ class VectorStore:
         """Finds top-k relevant chunks, optionally filtering by CDP."""
         if self.index is None:
             return ["No data loaded."]
+        
         query_embedding = self.model.encode([query], convert_to_numpy=True)
         _, indices = self.index.search(query_embedding, top_k)
 
         results = []
         for i in indices[0]:
-            if cdp_filter is None or self.metadata[i] == cdp_filter:
-                results.append({"text": self.texts[i]["text"], "cdp": self.metadata[i]})
+            cdp, source = self.metadata[i]  # Get CDP and source file
+            if cdp_filter is None or cdp == cdp_filter:
+                results.append({
+                    "text": self.texts[i]["text"],
+                    "cdp": cdp,
+                    "source": source  # Include source filename
+                })
         
         return results if results else ["No relevant info found."]
 
